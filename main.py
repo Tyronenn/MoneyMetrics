@@ -1,1 +1,0 @@
-from money_metrics.ui.main_window import MainWindow
