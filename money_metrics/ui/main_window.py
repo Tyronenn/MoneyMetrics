@@ -52,5 +52,11 @@ class MainWindow(QMainWindow):
     def add_graph_screen(self):
         """Create and show a new graph screen."""
         graph = GraphScreen(self.data_manager, self)
+        graph.destroyed.connect(self._remove_graph_screen)
         self.addDockWidget(Qt.RightDockWidgetArea, graph)
         self.graph_screens.append(graph)
+
+    def _remove_graph_screen(self, screen):
+        """Remove a graph screen once it has been destroyed."""
+        if screen in self.graph_screens:
+            self.graph_screens.remove(screen)
