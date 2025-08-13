@@ -10,7 +10,13 @@ class DataManager:
         self._datasets = {}
 
     def add_dataset(self, name, data):
-        """Store a dataset under a given name."""
+        """Store a dataset under a given name.
+
+        Raises:
+            ValueError: If a dataset with ``name`` already exists.
+        """
+        if name in self._datasets:
+            raise ValueError(f"Dataset '{name}' already exists")
         self._datasets[name] = data
 
     def remove_dataset(self, name):
