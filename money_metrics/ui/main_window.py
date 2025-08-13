@@ -29,7 +29,8 @@ class MainWindow(QMainWindow):
         # Data manager keeps datasets separate from the UI widgets
         self.data_manager = DataManager()
         # Example dataset for demonstration purposes
-        self.data_manager.add_dataset("Sample", [1, 2, 3, 4])
+        # `replace=True` ensures re-running won't raise if the dataset exists
+        self.data_manager.add_dataset("Sample", [1, 2, 3, 4], replace=True)
 
         # Placeholder central widget
         central_widget = QWidget()
