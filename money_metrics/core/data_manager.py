@@ -9,8 +9,22 @@ class DataManager:
     def __init__(self):
         self._datasets = {}
 
-    def add_dataset(self, name, data):
-        """Store a dataset under a given name."""
+    def add_dataset(self, name, data, replace=False):
+        """Store a dataset under a given name.
+
+        Parameters
+        ----------
+        name: str
+            Identifier for the dataset.
+        data: Any
+            Data associated with the ``name``.
+        replace: bool, optional
+            If ``True``, overwrite an existing dataset with the same
+            ``name``. If ``False`` (default), attempting to add a
+            duplicate will raise :class:`ValueError`.
+        """
+        if not replace and name in self._datasets:
+            raise ValueError(f"Dataset '{name}' already exists")
         self._datasets[name] = data
 
     def remove_dataset(self, name):
