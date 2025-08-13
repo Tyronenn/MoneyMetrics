@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from core.data_manager import DataManager
+from money_metrics.core.data_manager import DataManager
 from .graph_screen import GraphScreen
 
 class MainWindow(QMainWindow):
