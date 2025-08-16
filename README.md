@@ -42,10 +42,18 @@ python main.py
 
 ## Run tests
 
-Install optional development requirements and run the test suite:
+For contributors who wish to run the test suite, first install the optional
+development requirements:
 
 ```bash
 pip install -r requirements-dev.txt
+```
+
+### Pytest
+
+Execute the tests with:
+
+```bash
 pytest
 ```
 
