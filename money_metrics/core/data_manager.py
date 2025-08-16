@@ -1,9 +1,14 @@
+import copy
+
+
 class DataManager:
     """Simple in-memory data storage for graphing datasets.
 
     This class keeps the graph data separate from the UI components. Graph
     screens can query datasets by name when the user chooses to attach data to
-    a graph.
+    a graph.  The manager defends its internal state by storing and returning
+    copies of datasets so that callers cannot accidentally mutate what is
+    stored.
     """
 
     def __init__(self):
@@ -22,10 +27,17 @@ class DataManager:
             If ``True``, overwrite an existing dataset with the same
             ``name``. If ``False`` (default), attempting to add a
             duplicate will raise :class:`ValueError`.
+
+        Notes
+        -----
+        A deep copy of ``data`` is stored to prevent external modification of
+        the internal dataset after it has been added.
         """
         if not replace and name in self._datasets:
             raise ValueError(f"Dataset '{name}' already exists")
-        self._datasets[name] = data
+        # Store a copy so future modifications to the original object do not
+        # alter the stored dataset.
+        self._datasets[name] = copy.deepcopy(data)
 
     def remove_dataset(self, name):
         """Remove a dataset if it exists."""
@@ -34,6 +46,10 @@ class DataManager:
     def get_dataset(self, name):
         """Retrieve a dataset by name.
 
-        Returns ``None`` if the dataset is unknown.
+        Returns
+        -------
+        Any or ``None``
+            A deep copy of the dataset or ``None`` if the dataset is unknown.
         """
-        return self._datasets.get(name)
+        data = self._datasets.get(name)
+        return None if data is None else copy.deepcopy(data)
