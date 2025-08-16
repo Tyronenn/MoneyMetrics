@@ -13,23 +13,28 @@ Simple PySide6 based application for experimenting with financial data.
 ### Prerequisites
 - Python 3.10+
 
-### macOS/Linux
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+### Automatic setup
 
-### Windows
-```bash
-python -m venv venv
-venv\\Scripts\\activate
-```
-
-Install dependencies:
+Create a virtual environment and install dependencies with the provided script:
 
 ```bash
-pip install -r requirements.txt
+python setup_env.py            # runtime dependencies only
+python setup_env.py --dev      # include dev/test requirements (optional)
 ```
+
+### Activate the environment
+
+- **macOS/Linux**
+
+  ```bash
+  source venv/bin/activate
+  ```
+
+- **Windows**
+
+  ```bash
+  venv\Scripts\activate
+  ```
 
 ## Run the app
 
@@ -42,11 +47,11 @@ python main.py
 
 ## Run tests
 
-For contributors who wish to run the test suite, first install the optional
-development requirements:
+For contributors who wish to run the test suite, install the additional
+development requirements (if not already installed) with:
 
 ```bash
-pip install -r requirements-dev.txt
+python setup_env.py --dev
 ```
 
 ### Pytest
