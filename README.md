@@ -38,11 +38,11 @@ python setup_env.py --dev      # include dev/test requirements (optional)
 
 ## Run the app
 
-The application's entry point is `money_metrics.main.main`, exposed via the
-top-level `main.py` helper script. Launch the program with:
+The application can be launched directly as a module thanks to the
+``money_metrics.__main__`` entry point:
 
 ```bash
-python main.py
+python -m money_metrics
 ```
 
 ## Run tests
