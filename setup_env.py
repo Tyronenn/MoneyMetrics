@@ -57,7 +57,7 @@ def main() -> None:
     print(
         "Activate the environment with:\n  source venv/bin/activate (macOS/Linux)\n  venv\\Scripts\\activate (Windows)"
     )
-    print(f"Run the application using:\n  {python} main.py")
+    print(f"Run the application using:\n  {python} -m money_metrics")
 
 
 if __name__ == "__main__":
