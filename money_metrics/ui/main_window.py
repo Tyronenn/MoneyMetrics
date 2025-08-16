@@ -13,8 +13,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QMenuBar,
-    QAction,
 )
+from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
 
 from money_metrics.core.data_manager import DataManager
