@@ -57,3 +57,18 @@ Execute the tests with:
 pytest
 ```
 
+## Troubleshooting
+
+### macOS
+
+If installing Qt or PySide fails, install the Xcode command line tools:
+
+```bash
+xcode-select --install
+```
+
+### Windows
+
+Some dependencies may require Microsoft's C++ build tools. If installation
+fails, install the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+
