@@ -42,3 +42,12 @@ def test_get_dataset_returns_copy():
     # internal dataset remains unchanged
     assert dm.get_dataset("numbers") == [1, 2, 3]
 
+
+def test_all_datasets_returns_copy():
+    dm = DataManager()
+    dm.add_dataset("sample", [1, 2, 3])
+    datasets = dm.all_datasets()
+    datasets["sample"].append(4)
+
+    assert dm.get_dataset("sample") == [1, 2, 3]
+

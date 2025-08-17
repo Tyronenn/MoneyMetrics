@@ -53,3 +53,17 @@ class DataManager:
         """
         data = self._datasets.get(name)
         return None if data is None else copy.deepcopy(data)
+
+    # ------------------------------------------------------------------
+    def all_datasets(self):
+        """Return a deep copy of all stored datasets.
+
+        The returned mapping can be freely modified by callers without
+        affecting the internal state of the manager.  It is primarily used for
+        serialising the application state to a profile.
+        """
+        return copy.deepcopy(self._datasets)
+
+    def clear(self):
+        """Remove all datasets from the manager."""
+        self._datasets.clear()

@@ -18,6 +18,7 @@ class GraphScreen(QDockWidget):
         super().__init__(title, parent)
         self.data_manager = data_manager
         self.data = None
+        self.dataset_name = None
 
         content = QWidget(self)
         layout = QVBoxLayout(content)
@@ -27,7 +28,7 @@ class GraphScreen(QDockWidget):
         self.setWidget(content)
 
     # ------------------------ Data handling -------------------------
-    def set_data(self, data):
+    def set_data(self, data, name=None):
         """Assign data to the graph screen.
 
         Parameters
@@ -35,8 +36,12 @@ class GraphScreen(QDockWidget):
         data: Any
             Data to be visualised. For this stub implementation the data is
             simply converted to a string and displayed in the label.
+        name: str, optional
+            Name of the dataset, stored so the screen can be recreated when a
+            profile is loaded.
         """
         self.data = data
+        self.dataset_name = name
         if data is None:
             self.label.setText("No data")
         else:
@@ -72,4 +77,4 @@ class GraphScreen(QDockWidget):
         if data is None:
             QMessageBox.warning(self, "Data not found", f"Dataset '{name}' not found.")
             return
-        self.set_data(data)
+        self.set_data(data, name)
