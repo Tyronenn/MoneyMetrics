@@ -7,6 +7,8 @@ Simple PySide6 based application for experimenting with financial data.
 * Modular graph screens that can be added, renamed, detached or removed.
 * Data is stored separately from graph widgets allowing the user to choose
   which datasets to display.
+* Built-in 401(k) dataset support with editable monthly contributions and
+  graph/table visualisation.
 
 ## Setup
 
