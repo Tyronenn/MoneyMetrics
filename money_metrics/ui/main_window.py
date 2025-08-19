@@ -53,10 +53,10 @@ class MainWindow(QMainWindow):
         # Menu setup
         menu_bar = QMenuBar(self)
         self.setMenuBar(menu_bar)
-        graphs_menu = menu_bar.addMenu("Graphs")
-        add_graph_action = QAction("Add Graph", self)
-        add_graph_action.triggered.connect(self.add_graph_screen)
-        graphs_menu.addAction(add_graph_action)
+        plots_menu = menu_bar.addMenu("Plots")
+        add_plot_action = QAction("Add Plot", self)
+        add_plot_action.triggered.connect(self.add_plot_screen)
+        plots_menu.addAction(add_plot_action)
 
         # Finance menu
         finance_menu = menu_bar.addMenu("Finance")
@@ -84,12 +84,14 @@ class MainWindow(QMainWindow):
             self.data_manager.add_dataset("Sample", [1, 2, 3, 4], replace=True)
 
     # ------------------------------------------------------------------
-    def add_graph_screen(self):
-        """Create and show a new graph screen."""
-        graph = GraphScreen(self.data_manager, self)
-        graph.destroyed.connect(self._remove_graph_screen)
-        self.addDockWidget(Qt.RightDockWidgetArea, graph)
-        self.graph_screens.append(graph)
+    def add_plot_screen(self):
+        """Create and show a new plot screen."""
+        plot = GraphScreen(self.data_manager, self)
+        plot.destroyed.connect(self._remove_graph_screen)
+        self.addDockWidget(Qt.TopDockWidgetArea, plot)
+        if self.graph_screens:
+            self.tabifyDockWidget(self.graph_screens[0], plot)
+        self.graph_screens.append(plot)
 
     def _remove_graph_screen(self, screen):
         """Remove a graph screen once it has been destroyed."""
@@ -145,14 +147,16 @@ class MainWindow(QMainWindow):
 
         self.data_manager.add_dataset("401(k)", data, replace=True)
 
-        # Display the data immediately in a new graph screen (table view)
-        graph = GraphScreen(self.data_manager, self, title="401(k)")
-        graph.set_data(data, "401(k)")
-        if graph.view_mode == "graph":
-            graph._toggle_view()
-        graph.destroyed.connect(self._remove_graph_screen)
-        self.addDockWidget(Qt.RightDockWidgetArea, graph)
-        self.graph_screens.append(graph)
+        # Display the data immediately in a new plot screen (table view)
+        plot = GraphScreen(self.data_manager, self, title="401(k)")
+        plot.set_data(data, "401(k)")
+        if plot.view_mode == "graph":
+            plot._toggle_view()
+        plot.destroyed.connect(self._remove_graph_screen)
+        self.addDockWidget(Qt.TopDockWidgetArea, plot)
+        if self.graph_screens:
+            self.tabifyDockWidget(self.graph_screens[0], plot)
+        self.graph_screens.append(plot)
 
     # ------------------------------------------------------------------
     def _apply_profile(self, profile: AppProfile) -> None:
@@ -179,7 +183,9 @@ class MainWindow(QMainWindow):
                 if data is not None:
                     graph.set_data(data, dataset_name)
             graph.destroyed.connect(self._remove_graph_screen)
-            self.addDockWidget(Qt.RightDockWidgetArea, graph)
+            self.addDockWidget(Qt.TopDockWidgetArea, graph)
+            if self.graph_screens:
+                self.tabifyDockWidget(self.graph_screens[0], graph)
             self.graph_screens.append(graph)
 
     def _save_profile(self) -> None:

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QTableWidget,
     QTableWidgetItem,
+    QPushButton,
 )
 from PySide6.QtGui import QDrag
 from PySide6.QtCore import Qt, QMimeData
@@ -66,7 +67,7 @@ class GraphScreen(QDockWidget):
 
     def __init__(self, data_manager, parent=None, title=None):
         if title is None:
-            title = f"Graph {GraphScreen._counter}"
+            title = "Plot" if GraphScreen._counter == 1 else f"Plot{GraphScreen._counter}"
             GraphScreen._counter += 1
         super().__init__(title, parent)
         self.data_manager = data_manager
@@ -79,6 +80,8 @@ class GraphScreen(QDockWidget):
         self._layout = QVBoxLayout(content)
         self.label = QLabel("No data", content)
         self.label.setAlignment(Qt.AlignCenter)
+        self.add_button = QPushButton("+ Add data", content)
+        self.add_button.clicked.connect(self._add_data)
         self.table = ParameterTableWidget(content)
         self.table.setEditTriggers(QTableWidget.AllEditTriggers)
         header = self.table.horizontalHeader()
@@ -89,6 +92,7 @@ class GraphScreen(QDockWidget):
         self.canvas = DragDropCanvas(self)
         self.view_mode = "graph"
 
+        self._layout.addWidget(self.add_button)
         self._layout.addWidget(self.label)
         self._current_widget = self.label
         self.setWidget(content)
@@ -314,3 +318,21 @@ class GraphScreen(QDockWidget):
         if ok and param in self._parameters:
             self._parameters.remove(param)
             self._update_graph(self.data)
+
+    def _add_data(self) -> None:
+        """Prompt the user to choose an available dataset."""
+        names = sorted(self.data_manager.all_datasets().keys())
+        if not names:
+            QMessageBox.information(
+                self,
+                "Add data",
+                "You haven't created data yet! Try adding 401(k) data first",
+            )
+            return
+        name, ok = QInputDialog.getItem(
+            self, "Add data", "Dataset:", names, 0, False
+        )
+        if ok and name:
+            data = self.data_manager.get_dataset(name)
+            if data is not None:
+                self.set_data(data, name)
