@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QInputDialog,
     QMessageBox,
+    QTabWidget,
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
@@ -34,11 +35,14 @@ class MainWindow(QMainWindow):
         # Data manager keeps datasets separate from the UI widgets
         self.data_manager = DataManager()
 
-        # Placeholder central widget
-        central_widget = QWidget()
-        layout = QVBoxLayout(central_widget)
+        # Default home layout with tabs at the top
+        self.home_tabs = QTabWidget()
+        self.home_tabs.setTabPosition(QTabWidget.North)
+        home_tab = QWidget()
+        layout = QVBoxLayout(home_tab)
         layout.addWidget(QLabel("Welcome to MoneyMetrics!"))
-        self.setCentralWidget(central_widget)
+        self.home_tabs.addTab(home_tab, "Home")
+        self.setCentralWidget(self.home_tabs)
 
         # Keep track of graph screens
         self.graph_screens: list[GraphScreen] = []
@@ -136,6 +140,11 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def _apply_profile(self, profile: AppProfile) -> None:
         """Load datasets and graph screens from a profile."""
+        # Replace the default home tabs with a plain central widget
+        if isinstance(self.centralWidget(), QTabWidget):
+            self.centralWidget().deleteLater()
+        self.setCentralWidget(QWidget())
+
         self.data_manager = DataManager()
         for name, data in profile.datasets.items():
             self.data_manager.add_dataset(name, data, replace=True)
