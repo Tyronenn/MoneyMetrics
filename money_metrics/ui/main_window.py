@@ -14,12 +14,15 @@ from PySide6.QtWidgets import (
     QWidget,
     QMenuBar,
     QFileDialog,
+    QInputDialog,
+    QMessageBox,
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
 
 from money_metrics.core.data_manager import DataManager
 from money_metrics.core.profile import AppProfile
+from money_metrics.core.four_zero_one_k import FourZeroOneK
 from .graph_screen import GraphScreen
 
 class MainWindow(QMainWindow):
@@ -50,6 +53,12 @@ class MainWindow(QMainWindow):
         add_graph_action = QAction("Add Graph", self)
         add_graph_action.triggered.connect(self.add_graph_screen)
         graphs_menu.addAction(add_graph_action)
+
+        # Finance menu
+        finance_menu = menu_bar.addMenu("Finance")
+        add_401k_action = QAction("Add 401(k)", self)
+        add_401k_action.triggered.connect(self._add_401k_dialog)
+        finance_menu.addAction(add_401k_action)
 
         # Profile menu
         profile_menu = menu_bar.addMenu("Profile")
@@ -82,6 +91,47 @@ class MainWindow(QMainWindow):
         """Remove a graph screen once it has been destroyed."""
         if screen in self.graph_screens:
             self.graph_screens.remove(screen)
+
+    # ------------------------------------------------------------------
+    def _add_401k_dialog(self) -> None:
+        """Prompt for 401(k) details and store the dataset."""
+        contribution, ok = QInputDialog.getDouble(
+            self,
+            "401(k)",
+            "Monthly contribution:",
+            0.0,
+            0.0,
+            1_000_000.0,
+            2,
+        )
+        if not ok:
+            return
+        growth, ok = QInputDialog.getDouble(
+            self,
+            "401(k)",
+            "Monthly growth rate (e.g. 0.01 for 1%):",
+            0.0,
+            -1.0,
+            1.0,
+            4,
+        )
+        if not ok:
+            return
+        months, ok = QInputDialog.getInt(
+            self,
+            "401(k)",
+            "Number of months:",
+            12,
+            1,
+            600,
+        )
+        if not ok:
+            return
+        plan = FourZeroOneK()
+        for _ in range(months):
+            plan.add_month(contribution, growth)
+        self.data_manager.add_dataset("401(k)", plan.to_dict(), replace=True)
+        QMessageBox.information(self, "401(k)", "401(k) dataset added.")
 
     # ------------------------------------------------------------------
     def _apply_profile(self, profile: AppProfile) -> None:
