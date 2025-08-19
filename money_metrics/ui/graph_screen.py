@@ -32,6 +32,8 @@ class GraphScreen(QDockWidget):
         self.data_manager = data_manager
         self.data = None
         self.dataset_name = None
+        # Track which parameters from the dataset are currently graphed
+        self._parameters: list[str] = []
 
         content = QWidget(self)
         self._layout = QVBoxLayout(content)
@@ -62,6 +64,12 @@ class GraphScreen(QDockWidget):
         self.dataset_name = name
 
         if isinstance(data, list) and data and isinstance(data[0], dict):
+            # When new tabular data is assigned default to graphing the
+            # calculated balance if present. The user can add/remove
+            # additional parameters via the context menu.
+            self._parameters = []
+            if "balance" in data[0]:
+                self._parameters.append("balance")
             self._update_table(data)
             self._update_graph(data)
             widget = self.canvas if self.view_mode == "graph" else self.table
@@ -76,8 +84,10 @@ class GraphScreen(QDockWidget):
         menu = QMenu(self)
         rename_action = menu.addAction("Rename")
         data_action = menu.addAction("Set Data")
-        toggle_action = None
+        add_param = remove_param = toggle_action = None
         if isinstance(self.data, list) and self.data and isinstance(self.data[0], dict):
+            add_param = menu.addAction("Add Parameter")
+            remove_param = menu.addAction("Remove Parameter")
             toggle_action = menu.addAction(
                 "Show Table" if self.view_mode == "graph" else "Show Graph"
             )
@@ -90,6 +100,10 @@ class GraphScreen(QDockWidget):
             self._rename()
         elif action == data_action:
             self._prompt_for_data()
+        elif add_param and action == add_param:
+            self._add_parameter()
+        elif remove_param and action == remove_param:
+            self._remove_parameter()
         elif toggle_action and action == toggle_action:
             self._toggle_view()
         elif action == detach_action:
@@ -132,16 +146,57 @@ class GraphScreen(QDockWidget):
                 self.table.setItem(row, col, item)
 
     def _update_graph(self, data):
+        """Render the selected parameters against months."""
+
         ax = self.canvas.figure.subplots()
         ax.clear()
+        if not (isinstance(data, list) and data and isinstance(data[0], dict)):
+            self.canvas.draw_idle()
+            return
+
         months = [d.get("month", i + 1) for i, d in enumerate(data)]
-        balances = [d.get("balance", 0) for d in data]
-        ax.plot(months, balances, marker="o")
+        for param in self._parameters:
+            values = [d.get(param, 0) for d in data]
+            ax.plot(months, values, marker="o", label=param)
         ax.set_xlabel("Month")
-        ax.set_ylabel("Balance")
+        ax.set_ylabel("Value")
+        if self._parameters:
+            ax.legend()
         self.canvas.draw_idle()
 
     def _toggle_view(self):
         self.view_mode = "table" if self.view_mode == "graph" else "graph"
         widget = self.canvas if self.view_mode == "graph" else self.table
         self._set_widget(widget)
+
+    # --------------------- Parameter management ---------------------
+    def _available_parameters(self) -> list[str]:
+        if not (isinstance(self.data, list) and self.data and isinstance(self.data[0], dict)):
+            return []
+        keys = list(self.data[0].keys())
+        if "month" in keys:
+            keys.remove("month")
+        return [k for k in keys if k not in self._parameters]
+
+    def _add_parameter(self) -> None:
+        options = self._available_parameters()
+        if not options:
+            QMessageBox.information(self, "Add Parameter", "No additional parameters available.")
+            return
+        param, ok = QInputDialog.getItem(
+            self, "Add Parameter", "Parameter:", options, 0, False
+        )
+        if ok and param:
+            self._parameters.append(param)
+            self._update_graph(self.data)
+
+    def _remove_parameter(self) -> None:
+        if not self._parameters:
+            QMessageBox.information(self, "Remove Parameter", "No parameters to remove.")
+            return
+        param, ok = QInputDialog.getItem(
+            self, "Remove Parameter", "Parameter:", self._parameters, 0, False
+        )
+        if ok and param in self._parameters:
+            self._parameters.remove(param)
+            self._update_graph(self.data)
