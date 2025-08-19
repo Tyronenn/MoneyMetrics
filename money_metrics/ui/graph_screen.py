@@ -9,10 +9,50 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtGui import QDrag
+from PySide6.QtCore import Qt, QMimeData
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+from money_metrics.core.four_zero_one_k import FourZeroOneK
+
+
+class ParameterTableWidget(QTableWidget):
+    """QTableWidget that starts a drag with the column name."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setDragEnabled(True)
+
+    def startDrag(self, supportedActions):  # type: ignore[override]
+        item = self.currentItem()
+        if item is None:
+            return
+        drag = QDrag(self)
+        mime = QMimeData()
+        column_name = self.horizontalHeaderItem(item.column()).text()
+        mime.setText(column_name)
+        drag.setMimeData(mime)
+        drag.exec(Qt.CopyAction)
+
+
+class DragDropCanvas(FigureCanvas):
+    """Matplotlib canvas accepting dropped parameters."""
+
+    def __init__(self, screen, *args, **kwargs):
+        super().__init__(Figure(figsize=(5, 3)))
+        self._screen = screen
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event):  # type: ignore[override]
+        if event.mimeData().hasText():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):  # type: ignore[override]
+        if event.mimeData().hasText():
+            self._screen.handle_dropped_parameter(event.mimeData().text())
+            event.acceptProposedAction()
 
 class GraphScreen(QDockWidget):
     """A dockable widget representing a graph screen.
@@ -39,8 +79,14 @@ class GraphScreen(QDockWidget):
         self._layout = QVBoxLayout(content)
         self.label = QLabel("No data", content)
         self.label.setAlignment(Qt.AlignCenter)
-        self.table = QTableWidget(content)
-        self.canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        self.table = ParameterTableWidget(content)
+        self.table.setEditTriggers(QTableWidget.AllEditTriggers)
+        header = self.table.horizontalHeader()
+        header.setSectionsMovable(True)
+        header.setSectionsClickable(True)
+        header.sectionDoubleClicked.connect(self._rename_column)
+        self.table.itemChanged.connect(self._on_item_changed)
+        self.canvas = DragDropCanvas(self)
         self.view_mode = "graph"
 
         self._layout.addWidget(self.label)
@@ -126,6 +172,56 @@ class GraphScreen(QDockWidget):
             return
         self.set_data(data, name)
 
+    # ------------------------ Column management ---------------------
+    def _rename_column(self, index: int) -> None:
+        old = self.table.horizontalHeaderItem(index).text()
+        text, ok = QInputDialog.getText(
+            self, "Rename Column", "Column name:", text=old
+        )
+        if ok and text:
+            self.rename_column(index, text)
+
+    def rename_column(self, index: int, new_name: str) -> None:
+        """Rename a column both in the table and underlying data."""
+
+        old_name = self.table.horizontalHeaderItem(index).text()
+        if not new_name or new_name == old_name:
+            return
+        self.table.horizontalHeaderItem(index).setText(new_name)
+        for row in self.data:
+            row[new_name] = row.pop(old_name, None)
+        if old_name in self._parameters:
+            i = self._parameters.index(old_name)
+            self._parameters[i] = new_name
+        self._sync_data_manager()
+        self._update_graph(self.data)
+
+    def _on_item_changed(self, item: QTableWidgetItem) -> None:
+        key = self.table.horizontalHeaderItem(item.column()).text()
+        row = item.row()
+        try:
+            value = float(item.text())
+        except ValueError:
+            return
+        self.data[row][key] = value
+        if self._is_401k_dataset():
+            plan = FourZeroOneK(self.data)
+            self.data = plan.to_dict()
+            self.table.blockSignals(True)
+            self._update_table(self.data)
+            self.table.blockSignals(False)
+        self._sync_data_manager()
+        self._update_graph(self.data)
+
+    def handle_dropped_parameter(self, param: str) -> None:
+        """Toggle a parameter on the graph via drag-and-drop."""
+
+        if param in self._parameters:
+            self._parameters.remove(param)
+        else:
+            self._parameters.append(param)
+        self._update_graph(self.data)
+
     # ------------------------ Helpers ---------------------------
     def _set_widget(self, widget: QWidget) -> None:
         if widget is self._current_widget:
@@ -135,7 +231,24 @@ class GraphScreen(QDockWidget):
         self._layout.addWidget(widget)
         self._current_widget = widget
 
+    def _sync_data_manager(self) -> None:
+        if self.dataset_name:
+            self.data_manager.add_dataset(self.dataset_name, self.data, replace=True)
+
+    def _is_401k_dataset(self) -> bool:
+        return (
+            isinstance(self.data, list)
+            and self.data
+            and {
+                "month",
+                "contribution",
+                "growth_rate",
+                "balance",
+            }.issubset(self.data[0].keys())
+        )
+
     def _update_table(self, data):
+        self.table.blockSignals(True)
         keys = list(data[0].keys())
         self.table.setColumnCount(len(keys))
         self.table.setHorizontalHeaderLabels(keys)
@@ -144,6 +257,7 @@ class GraphScreen(QDockWidget):
             for col, key in enumerate(keys):
                 item = QTableWidgetItem(str(entry.get(key, "")))
                 self.table.setItem(row, col, item)
+        self.table.blockSignals(False)
 
     def _update_graph(self, data):
         """Render the selected parameters against months."""

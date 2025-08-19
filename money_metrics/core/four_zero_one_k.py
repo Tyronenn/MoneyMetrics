@@ -12,6 +12,7 @@ the UI.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, asdict
 from typing import List, Dict, Iterable
 
@@ -87,6 +88,21 @@ class FourZeroOneK:
         """Return the dataset as a list of serialisable dicts."""
 
         return [asdict(e) for e in self.entries]
+
+    # ------------------------------------------------------------------
+    def save_to_json(self, path: str) -> None:
+        """Persist the dataset to ``path`` as JSON."""
+
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(self.to_dict(), fh, indent=2)
+
+    @classmethod
+    def load_from_json(cls, path: str) -> "FourZeroOneK":
+        """Create a :class:`FourZeroOneK` from a JSON file."""
+
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return cls(entries=data)
 
     # ------------------------------------------------------------------
     def _recalculate_from(self, start: int) -> None:

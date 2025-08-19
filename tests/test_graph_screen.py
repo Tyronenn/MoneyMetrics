@@ -42,3 +42,43 @@ def test_add_and_remove_parameters(app):
     screen._update_graph(data)
     labels = [line.get_label() for line in screen.canvas.figure.axes[0].get_lines()]
     assert "balance" not in labels and "contribution" in labels
+
+
+def _col_index(table, name):
+    for i in range(table.columnCount()):
+        if table.horizontalHeaderItem(i).text() == name:
+            return i
+    raise ValueError(name)
+
+
+def test_edit_and_rename_column_updates_dataset(app):
+    dm = DataManager()
+    screen = GraphScreen(dm)
+    data = sample_dataset()
+    screen.set_data(data, name="401(k)")
+
+    # Edit contribution of first row
+    c_idx = _col_index(screen.table, "contribution")
+    item = screen.table.item(0, c_idx)
+    item.setText("200")
+    assert screen.data[0]["contribution"] == 200.0
+    # balance should be recomputed
+    assert screen.data[0]["balance"] == pytest.approx((0 + 200) * 1.01)
+    assert dm.get_dataset("401(k)")[0]["contribution"] == 200.0
+
+    # Rename column and ensure parameters update
+    screen.handle_dropped_parameter("contribution")
+    screen.rename_column(c_idx, "deposit")
+    assert "deposit" in screen.data[0]
+    assert "contribution" not in screen.data[0]
+    assert "deposit" in screen._parameters and "contribution" not in screen._parameters
+
+
+def test_drag_drop_toggle_parameter(app):
+    screen = GraphScreen(DataManager())
+    data = sample_dataset()
+    screen.set_data(data, name="401(k)")
+    screen.handle_dropped_parameter("contribution")
+    assert "contribution" in screen._parameters
+    screen.handle_dropped_parameter("contribution")
+    assert "contribution" not in screen._parameters
