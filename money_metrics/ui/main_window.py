@@ -134,8 +134,25 @@ class MainWindow(QMainWindow):
         plan = FourZeroOneK()
         for _ in range(months):
             plan.add_month(contribution, growth)
-        self.data_manager.add_dataset("401(k)", plan.to_dict(), replace=True)
-        QMessageBox.information(self, "401(k)", "401(k) dataset added.")
+        data = plan.to_dict()
+
+        # Save the dataset to a JSON file
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save 401(k) Data", filter="JSON Files (*.json)"
+        )
+        if path:
+            plan.save_to_json(path)
+
+        self.data_manager.add_dataset("401(k)", data, replace=True)
+
+        # Display the data immediately in a new graph screen (table view)
+        graph = GraphScreen(self.data_manager, self, title="401(k)")
+        graph.set_data(data, "401(k)")
+        if graph.view_mode == "graph":
+            graph._toggle_view()
+        graph.destroyed.connect(self._remove_graph_screen)
+        self.addDockWidget(Qt.RightDockWidgetArea, graph)
+        self.graph_screens.append(graph)
 
     # ------------------------------------------------------------------
     def _apply_profile(self, profile: AppProfile) -> None:

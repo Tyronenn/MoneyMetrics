@@ -27,3 +27,12 @@ def test_401k_add_modify_delete_and_profile(tmp_path):
     assert "401k" in loaded.datasets
     assert loaded.datasets["401k"] == plan.to_dict()
 
+
+def test_save_and_load_json(tmp_path):
+    plan = FourZeroOneK()
+    plan.add_month(100, 0.01)
+    path = tmp_path / "401k.json"
+    plan.save_to_json(path)
+    loaded = FourZeroOneK.load_from_json(path)
+    assert loaded.to_dict() == plan.to_dict()
+

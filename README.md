@@ -8,8 +8,14 @@ Simple PySide6 based application for experimenting with financial data.
 * Data is stored separately from graph widgets allowing the user to choose
   which datasets to display.
 * Built-in 401(k) dataset support with editable monthly contributions and
-  graph/table visualisation. Individual inputs and calculated outputs can be
-  added to or removed from graphs on demand.
+  graph/table visualisation. 401(k) data is saved to a local JSON file and
+  displayed immediately in an editable table. Columns can be renamed and
+  rearranged, and parameters are added to the graph by dragging the column
+  onto the plot. All edits are reflected in real time and persisted so the
+  entire application state can be saved to a shareable profile. These
+  behaviours form the basis for future datasets such as HSAs, brokerage
+  accounts, home values, vehicles, savings accounts, bonds, stocks and
+  cryptocurrencies.
 
 ## Setup
 
