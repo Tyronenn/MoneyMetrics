@@ -1,7 +1,7 @@
 import pytest
 
 pytest.importorskip("PySide6.QtWidgets")
-from PySide6.QtWidgets import QApplication, QTabWidget
+from PySide6.QtWidgets import QApplication, QPushButton
 
 from money_metrics.ui.main_window import MainWindow
 from money_metrics.core.profile import AppProfile
@@ -16,10 +16,11 @@ def app():
     yield app
 
 
-def test_default_home_layout_has_tabs(app):
+def test_default_home_layout_has_buttons(app):
     window = MainWindow()
-    assert isinstance(window.centralWidget(), QTabWidget)
-    assert window.centralWidget().tabPosition() == QTabWidget.North
+    central = window.centralWidget()
+    texts = sorted(btn.text() for btn in central.findChildren(QPushButton))
+    assert texts == ["Create Data", "Import Profile"]
 
 
 def test_profile_load_replaces_home_layout(app):
@@ -29,4 +30,4 @@ def test_profile_load_replaces_home_layout(app):
     )
     window = MainWindow()
     window._apply_profile(profile)
-    assert not isinstance(window.centralWidget(), QTabWidget)
+    assert not window.centralWidget().findChildren(QPushButton)
