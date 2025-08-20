@@ -4,9 +4,13 @@ Simple PySide6 based application for experimenting with financial data.
 
 ## Features
 
-* Modular graph screens that can be added, renamed, detached or removed.
-* Data is stored separately from graph widgets allowing the user to choose
+* Modular graph and table screens that can be added, renamed, detached or
+  removed.
+* Data is stored separately from widgets allowing the user to choose
   which datasets to display.
+* Blank landing screen with quick actions to import a profile or create
+  data; once data is loaded or created the landing view is replaced by
+  the dataset table.
 * Built-in 401(k) dataset support with editable monthly contributions and
   graph/table visualisation. 401(k) data is saved to a local JSON file and
   displayed immediately in an editable table. Columns can be renamed and

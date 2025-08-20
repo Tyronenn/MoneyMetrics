@@ -9,14 +9,13 @@ to display on a particular screen.
 
 from PySide6.QtWidgets import (
     QMainWindow,
-    QLabel,
     QVBoxLayout,
     QWidget,
     QMenuBar,
     QFileDialog,
     QInputDialog,
     QMessageBox,
-    QTabWidget,
+    QPushButton,
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
@@ -36,14 +35,17 @@ class MainWindow(QMainWindow):
         # Data manager keeps datasets separate from the UI widgets
         self.data_manager = DataManager()
 
-        # Default home layout with tabs at the top
-        self.home_tabs = QTabWidget()
-        self.home_tabs.setTabPosition(QTabWidget.North)
-        home_tab = QWidget()
-        layout = QVBoxLayout(home_tab)
-        layout.addWidget(QLabel("Welcome to MoneyMetrics!"))
-        self.home_tabs.addTab(home_tab, "Home")
-        self.setCentralWidget(self.home_tabs)
+        # Default landing screen with import/create buttons
+        self.home_widget = QWidget()
+        layout = QVBoxLayout(self.home_widget)
+        layout.setAlignment(Qt.AlignCenter)
+        import_btn = QPushButton("Import Profile", self.home_widget)
+        import_btn.clicked.connect(self._load_profile_dialog)
+        create_btn = QPushButton("Create Data", self.home_widget)
+        create_btn.clicked.connect(self._add_401k_dialog)
+        layout.addWidget(import_btn)
+        layout.addWidget(create_btn)
+        self.setCentralWidget(self.home_widget)
 
         # Keep track of graph screens
         self.graph_screens: list[GraphScreen] = []
@@ -54,10 +56,13 @@ class MainWindow(QMainWindow):
         # Menu setup
         menu_bar = QMenuBar(self)
         self.setMenuBar(menu_bar)
-        plots_menu = menu_bar.addMenu("Plots")
-        add_plot_action = QAction("Add Plot", self)
-        add_plot_action.triggered.connect(self.add_plot_screen)
-        plots_menu.addAction(add_plot_action)
+        widgets_menu = menu_bar.addMenu("Widgets")
+        add_graph_action = QAction("Add Graph", self)
+        add_graph_action.triggered.connect(self.add_plot_screen)
+        widgets_menu.addAction(add_graph_action)
+        add_table_action = QAction("Add Table", self)
+        add_table_action.triggered.connect(self.add_table_screen)
+        widgets_menu.addAction(add_table_action)
 
         # Finance menu
         finance_menu = menu_bar.addMenu("Finance")
@@ -79,10 +84,6 @@ class MainWindow(QMainWindow):
 
         if profile is not None:
             self._apply_profile(profile)
-        else:
-            # Example dataset for demonstration purposes
-            # `replace=True` ensures re-running won't raise if the dataset exists
-            self.data_manager.add_dataset("Sample", [1, 2, 3, 4], replace=True)
 
     # ------------------------------------------------------------------
     def add_plot_screen(self):
@@ -93,6 +94,16 @@ class MainWindow(QMainWindow):
         if self.graph_screens:
             self.tabifyDockWidget(self.graph_screens[0], plot)
         self.graph_screens.append(plot)
+
+    def add_table_screen(self):
+        """Create and show a new table screen."""
+        table = GraphScreen(self.data_manager, self)
+        table._toggle_view()
+        table.destroyed.connect(self._remove_graph_screen)
+        self.addDockWidget(Qt.TopDockWidgetArea, table)
+        if self.graph_screens:
+            self.tabifyDockWidget(self.graph_screens[0], table)
+        self.graph_screens.append(table)
 
     def _remove_graph_screen(self, screen):
         """Remove a graph screen once it has been destroyed."""
@@ -165,6 +176,12 @@ class MainWindow(QMainWindow):
 
         self.data_manager.add_dataset("401(k)", data, replace=True)
 
+        # Replace the landing screen once data has been created
+        if getattr(self, "home_widget", None) is not None:
+            self.home_widget.deleteLater()
+            self.home_widget = None
+            self.setCentralWidget(QWidget())
+
         # Display the data immediately in a new plot screen (table view)
         plot = GraphScreen(self.data_manager, self, title="401(k)")
         plot.set_data(data, "401(k)")
@@ -179,9 +196,10 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def _apply_profile(self, profile: AppProfile) -> None:
         """Load datasets and graph screens from a profile."""
-        # Replace the default home tabs with a plain central widget
-        if isinstance(self.centralWidget(), QTabWidget):
-            self.centralWidget().deleteLater()
+        # Replace the landing screen with a plain central widget
+        if getattr(self, "home_widget", None) is not None:
+            self.home_widget.deleteLater()
+            self.home_widget = None
         self.setCentralWidget(QWidget())
 
         self.data_manager = DataManager()
@@ -200,6 +218,8 @@ class MainWindow(QMainWindow):
                 data = self.data_manager.get_dataset(dataset_name)
                 if data is not None:
                     graph.set_data(data, dataset_name)
+                    if graph.view_mode == "graph":
+                        graph._toggle_view()
             graph.destroyed.connect(self._remove_graph_screen)
             self.addDockWidget(Qt.TopDockWidgetArea, graph)
             if self.graph_screens:
