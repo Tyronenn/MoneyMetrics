@@ -176,6 +176,12 @@ class MainWindow(QMainWindow):
 
         self.data_manager.add_dataset("401(k)", data, replace=True)
 
+        # Replace the landing screen once data has been created
+        if getattr(self, "home_widget", None) is not None:
+            self.home_widget.deleteLater()
+            self.home_widget = None
+            self.setCentralWidget(QWidget())
+
         # Display the data immediately in a new plot screen (table view)
         plot = GraphScreen(self.data_manager, self, title="401(k)")
         plot.set_data(data, "401(k)")
@@ -212,6 +218,8 @@ class MainWindow(QMainWindow):
                 data = self.data_manager.get_dataset(dataset_name)
                 if data is not None:
                     graph.set_data(data, dataset_name)
+                    if graph.view_mode == "graph":
+                        graph._toggle_view()
             graph.destroyed.connect(self._remove_graph_screen)
             self.addDockWidget(Qt.TopDockWidgetArea, graph)
             if self.graph_screens:
