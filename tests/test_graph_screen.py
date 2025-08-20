@@ -44,6 +44,17 @@ def test_add_and_remove_parameters(app):
     assert "balance" not in labels and "contribution" in labels
 
 
+def test_update_graph_reuses_axes(app):
+    screen = GraphScreen(DataManager())
+    data = sample_dataset()
+    screen.set_data(data, name="401(k)")
+    initial_axes = len(screen.canvas.figure.axes)
+    # Repeated updates should not create additional axes
+    screen._update_graph(data)
+    screen._update_graph(data)
+    assert len(screen.canvas.figure.axes) == initial_axes
+
+
 def _col_index(table, name):
     for i in range(table.columnCount()):
         if table.horizontalHeaderItem(i).text() == name:
