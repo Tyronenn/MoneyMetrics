@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QAction
 from PySide6.QtCore import Qt
+import sys
 
 from money_metrics.core.data_manager import DataManager
 from money_metrics.core.profile import AppProfile
@@ -99,6 +100,20 @@ class MainWindow(QMainWindow):
             self.graph_screens.remove(screen)
 
     # ------------------------------------------------------------------
+    def _dialog_options(self) -> QFileDialog.Options:
+        """Options to use for file dialogs.
+
+        On macOS the native dialog emits a warning about ``NSSavePanel``
+        overriding ``identifier`` in ``NSWindow``. Using the Qt-provided
+        dialog avoids the warning while keeping behaviour the same on
+        other platforms.
+        """
+        options = QFileDialog.Options()
+        if sys.platform == "darwin":
+            options |= QFileDialog.Option.DontUseNativeDialog
+        return options
+
+    # ------------------------------------------------------------------
     def _add_401k_dialog(self) -> None:
         """Prompt for 401(k) details and store the dataset."""
         contribution, ok = QInputDialog.getDouble(
@@ -140,7 +155,10 @@ class MainWindow(QMainWindow):
 
         # Save the dataset to a JSON file
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save 401(k) Data", filter="JSON Files (*.json)"
+            self,
+            "Save 401(k) Data",
+            filter="JSON Files (*.json)",
+            options=self._dialog_options(),
         )
         if path:
             plan.save_to_json(path)
@@ -197,7 +215,10 @@ class MainWindow(QMainWindow):
 
     def _save_profile_as(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, "Save Profile", filter="MoneyMetrics Profile (*.json)"
+            self,
+            "Save Profile",
+            filter="MoneyMetrics Profile (*.json)",
+            options=self._dialog_options(),
         )
         if path:
             self.profile_path = path
@@ -205,7 +226,10 @@ class MainWindow(QMainWindow):
 
     def _load_profile_dialog(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
-            self, "Load Profile", filter="MoneyMetrics Profile (*.json)"
+            self,
+            "Load Profile",
+            filter="MoneyMetrics Profile (*.json)",
+            options=self._dialog_options(),
         )
         if path:
             profile = AppProfile.load_from_file(path)
