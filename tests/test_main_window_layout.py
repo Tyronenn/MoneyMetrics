@@ -31,3 +31,9 @@ def test_profile_load_replaces_home_layout(app):
     window = MainWindow()
     window._apply_profile(profile)
     assert not window.centralWidget().findChildren(QPushButton)
+
+
+def test_plot_hides_central_widget(app):
+    window = MainWindow()
+    window.add_plot_screen()
+    assert not window.centralWidget().isVisible()
