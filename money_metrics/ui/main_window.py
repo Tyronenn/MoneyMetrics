@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def add_plot_screen(self):
         """Create and show a new plot screen."""
+        self._prepare_workspace()
         plot = GraphScreen(self.data_manager, self)
         plot.destroyed.connect(self._remove_graph_screen)
         self.addDockWidget(Qt.TopDockWidgetArea, plot)
@@ -97,6 +98,7 @@ class MainWindow(QMainWindow):
 
     def add_table_screen(self):
         """Create and show a new table screen."""
+        self._prepare_workspace()
         table = GraphScreen(self.data_manager, self)
         table._toggle_view()
         table.destroyed.connect(self._remove_graph_screen)
@@ -123,6 +125,19 @@ class MainWindow(QMainWindow):
         if sys.platform == "darwin":
             options |= QFileDialog.Option.DontUseNativeDialog
         return options
+
+    def _prepare_workspace(self) -> None:
+        """Ensure the central area does not consume screen space."""
+        if getattr(self, "home_widget", None) is not None:
+            self.home_widget.deleteLater()
+            self.home_widget = None
+            placeholder = QWidget()
+            placeholder.setVisible(False)
+            self.setCentralWidget(placeholder)
+        else:
+            central = self.centralWidget()
+            if central is not None:
+                central.setVisible(False)
 
     # ------------------------------------------------------------------
     def _add_401k_dialog(self) -> None:
@@ -177,10 +192,7 @@ class MainWindow(QMainWindow):
         self.data_manager.add_dataset("401(k)", data, replace=True)
 
         # Replace the landing screen once data has been created
-        if getattr(self, "home_widget", None) is not None:
-            self.home_widget.deleteLater()
-            self.home_widget = None
-            self.setCentralWidget(QWidget())
+        self._prepare_workspace()
 
         # Display the data immediately in a new plot screen (table view)
         plot = GraphScreen(self.data_manager, self, title="401(k)")
@@ -196,11 +208,8 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     def _apply_profile(self, profile: AppProfile) -> None:
         """Load datasets and graph screens from a profile."""
-        # Replace the landing screen with a plain central widget
-        if getattr(self, "home_widget", None) is not None:
-            self.home_widget.deleteLater()
-            self.home_widget = None
-        self.setCentralWidget(QWidget())
+        # Replace the landing screen with a plain hidden central widget
+        self._prepare_workspace()
 
         self.data_manager = DataManager()
         for name, data in profile.datasets.items():
