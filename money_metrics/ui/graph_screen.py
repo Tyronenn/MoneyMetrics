@@ -266,8 +266,17 @@ class GraphScreen(QDockWidget):
     def _update_graph(self, data):
         """Render the selected parameters against months."""
 
-        ax = self.canvas.figure.subplots()
-        ax.clear()
+        # ``Figure.subplots`` creates a new set of axes every time it is
+        # called, which previously caused the figure to accumulate multiple
+        # axes when the graph was refreshed. Reuse the existing axes instead
+        # of adding new ones so repeated calls simply redraw on the same
+        # canvas.
+
+        fig = self.canvas.figure
+        # Clear any existing axes so we start fresh each update
+        fig.clear()
+        ax = fig.add_subplot(111)
+
         if not (isinstance(data, list) and data and isinstance(data[0], dict)):
             self.canvas.draw_idle()
             return
